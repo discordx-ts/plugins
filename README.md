@@ -38,6 +38,7 @@
 
 # 🗂 Plugins
 
+- [@discordx/plugin-lava-player](./plugins/lava-player/README.md) - lava player plugin for discordx bots.
 - [@discordx/plugin-ytdl-player](./plugins/ytdl-player/README.md) - YTDL player plugin for discordx bots.
 
 # 📜 Documentation
