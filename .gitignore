@@ -1,5 +1,5 @@
+*.bat
 .vscode
-node_modules
 build
-
+node_modules
 package-lock.json

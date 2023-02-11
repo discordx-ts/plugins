@@ -1,9 +1,9 @@
 import { IntentsBitField } from "discord.js";
 import { Client, MetadataStorage } from "discordx";
 
-import { YTDLPlayerPlugin } from "../src/index.js";
+import { LavaPlayerPlugin } from "../src/index.js";
 
-const ytdlPlayerPlugin = new YTDLPlayerPlugin({
+const lavaPlayerPlugin = new LavaPlayerPlugin({
   metadata: MetadataStorage.instance,
 });
 
@@ -24,7 +24,7 @@ export class Main {
         IntentsBitField.Flags.GuildMessageReactions,
         IntentsBitField.Flags.GuildVoiceStates,
       ],
-      plugins: [ytdlPlayerPlugin],
+      plugins: [lavaPlayerPlugin],
       silent: false,
     });
 

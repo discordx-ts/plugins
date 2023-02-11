@@ -1,0 +1,64 @@
+{
+  "name": "discordx",
+  "version": "0.0.0",
+  "private": true,
+  "workspaces": [
+    "plugins/*"
+  ],
+  "description": "Create a discord bot with TypeScript and Decorators!",
+  "keywords": [
+    "typescript",
+    "discord",
+    "bot",
+    "client",
+    "api",
+    "library",
+    "framework",
+    "tool",
+    "decorators"
+  ],
+  "homepage": "https://discordx.js.org",
+  "bugs": {
+    "url": "https://github.com/discordx-ts/templates/issue",
+    "email": "indianoceanroleplay@gmail.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/discordx-ts/templates"
+  },
+  "license": "Apache-2.0",
+  "contributors": [
+    "Vijay Meena <indianoceanroleplay@gmail.com> (https://github.com/samarmeena)"
+  ],
+  "scripts": {
+    "build": "turbo run build --parallel",
+    "build:changelog": "npm run build:changelog:docs && turbo run build:changelog --parallel",
+    "format": "prettier --write .",
+    "format-check": "prettier --check .",
+    "lint": "eslint ./",
+    "prepare": "npx is-ci || npx husky install",
+    "test": "turbo run test --parallel"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^17.4.2",
+    "@commitlint/config-angular": "^17.4.2",
+    "@typescript-eslint/eslint-plugin": "^5.51.0",
+    "@typescript-eslint/parser": "^5.51.0",
+    "eslint": "^8.34.0",
+    "eslint-plugin-import": "^2.27.5",
+    "eslint-plugin-simple-import-sort": "^10.0.0",
+    "eslint-plugin-typescript-sort-keys": "^2.1.0",
+    "husky": "^8.0.3",
+    "is-ci": "^3.0.1",
+    "prettier": "^2.8.4",
+    "turbo": "^1.7.4",
+    "typescript": "4.9.5"
+  },
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=7.0.0"
+  },
+  "publishConfig": {
+    "access": "restricted"
+  }
+}
