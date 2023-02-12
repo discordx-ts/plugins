@@ -51,14 +51,14 @@ pnpm add @discordx/plugin-ytdl-player
 # 📄 Usage
 
 ```ts
-import { Client, MetadataStorage } from "discordx"
-import { YTDLPlayerPlugin } from "@discordx/plugin-ytdl-player"
+import { Client, MetadataStorage } from "discordx";
+import { YTDLPlayerPlugin } from "@discordx/plugin-ytdl-player";
 
 // Initialize the Plugin:
-const YTDLPlugin = new YTDLPlayerPlugin({ metadata: MetadataStorage.instance })
+const YTDLPlugin = new YTDLPlayerPlugin({ metadata: MetadataStorage.instance });
 
 // Provide the plugin to the Discordx Client:
-const client = new Client({ plugins: [YTDLPlugin] })
+const client = new Client({ plugins: [YTDLPlugin] });
 ```
 
 # 📜 Documentation

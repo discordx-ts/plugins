@@ -60,14 +60,14 @@ To use this plugin, You will need to have a running Lavalink instance as well as
 # 📄 Usage
 
 ```ts
-import { Client, MetadataStorage } from "discordx"
-import { LavaPlayerPlugin } from "@discordx/plugin-lava-player"
+import { Client, MetadataStorage } from "discordx";
+import { LavaPlayerPlugin } from "@discordx/plugin-lava-player";
 
 // Initialize the Plugin:
-const LavaPlugin = new LavaPlayerPlugin({ metadata: MetadataStorage.instance })
+const LavaPlugin = new LavaPlayerPlugin({ metadata: MetadataStorage.instance });
 
 // Provide the plugin to the Discordx Client:
-const client = new Client({ plugins: [LavaPlugin] })
+const client = new Client({ plugins: [LavaPlugin] });
 ```
 
 # 📜 Documentation
