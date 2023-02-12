@@ -57,6 +57,19 @@ To use this plugin, You will need to have a running Lavalink instance as well as
 - `LAVA_PASSWORD` - Lavalink instance password. Is optional.
 - `LAVA_SHARD` - Number of Shards your bot is running. Is optional, Default is `0`.
 
+# 📄 Usage
+
+```ts
+import { Client, MetadataStorage } from "discordx"
+import { LavaPlayerPlugin } from "@discordx/plugin-lava-player"
+
+// Initialize the Plugin:
+const LavaPlugin = new LavaPlayerPlugin({ metadata: MetadataStorage.instance })
+
+// Provide the plugin to the Discordx Client:
+const client = new Client({ plugins: [LavaPlugin] })
+```
+
 # 📜 Documentation
 
 - [discordx.js.org](https://discordx.js.org)

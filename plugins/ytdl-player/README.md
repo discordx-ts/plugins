@@ -48,6 +48,19 @@ yarn add @discordx/plugin-ytdl-player
 pnpm add @discordx/plugin-ytdl-player
 ```
 
+# 📄 Usage
+
+```ts
+import { Client, MetadataStorage } from "discordx"
+import { YTDLPlayerPlugin } from "@discordx/plugin-ytdl-player"
+
+// Initialize the Plugin:
+const YTDLPlugin = new YTDLPlayerPlugin({ metadata: MetadataStorage.instance })
+
+// Provide the plugin to the Discordx Client:
+const client = new Client({ plugins: [YTDLPlugin] })
+```
+
 # 📜 Documentation
 
 - [discordx.js.org](https://discordx.js.org)
