@@ -38,7 +38,7 @@
 
 # 📖 Introduction
 
-YTDTL player plugin for discordx bots.
+YTDT player plugin for discordx bots.
 
 # 💻 Installation
 
