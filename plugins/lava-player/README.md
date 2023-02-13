@@ -64,10 +64,10 @@ import { Client, MetadataStorage } from "discordx";
 import { LavaPlayerPlugin } from "@discordx/plugin-lava-player";
 
 // Initialize the Plugin:
-const LavaPlugin = new LavaPlayerPlugin({ metadata: MetadataStorage.instance });
+const lavaPlugin = new LavaPlayerPlugin({ metadata: MetadataStorage.instance });
 
 // Provide the plugin to the Discordx Client:
-const client = new Client({ plugins: [LavaPlugin] });
+const client = new Client({ plugins: [lavaPlugin] });
 ```
 
 # 📜 Documentation
