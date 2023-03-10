@@ -211,7 +211,7 @@ export class MyQueue extends Queue {
       embeds: [embed],
     };
 
-    if (!this.isReady && this.lastControlMessage) {
+    if (!this.isReady && this.lastControlMessage && this.lastControlMessage.deletable) {
       await this.lastControlMessage.delete();
       this.lastControlMessage = undefined;
       this.lockUpdate = false;
@@ -220,7 +220,7 @@ export class MyQueue extends Queue {
 
     try {
       if (!this.lastControlMessage || options?.force) {
-        if (this.lastControlMessage) {
+        if (this.lastControlMessage && this.lastControlMessage.deletable) {
           await this.lastControlMessage.delete();
           this.lastControlMessage = undefined;
         }
