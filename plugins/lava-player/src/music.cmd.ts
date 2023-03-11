@@ -5,10 +5,12 @@ import type {
   ButtonInteraction,
   CommandInteraction,
   Guild,
+  StageChannel,
   TextBasedChannel,
 } from "discord.js";
 import {
   ApplicationCommandOptionType,
+  ChannelType,
   EmbedBuilder,
   GuildMember,
 } from "discord.js";
@@ -53,7 +55,7 @@ export class MusicPlayer {
     skipBotChannel = false
   ): Promise<
     | {
-        channel: TextBasedChannel;
+        channel: Exclude<TextBasedChannel, StageChannel>;
         guild: Guild;
         member: GuildMember;
         queue: MusicQueue;
@@ -64,6 +66,7 @@ export class MusicPlayer {
 
     if (
       !interaction.channel ||
+      interaction.channel.type === ChannelType.GuildStageVoice ||
       !(interaction.member instanceof GuildMember) ||
       !interaction.guild ||
       !interaction.client.user

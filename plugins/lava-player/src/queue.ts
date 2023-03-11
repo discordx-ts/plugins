@@ -10,6 +10,7 @@ import type {
   CommandInteraction,
   ContextMenuCommandInteraction,
   MessageActionRowComponentBuilder,
+  StageChannel,
   TextBasedChannel,
 } from "discord.js";
 import {
@@ -24,7 +25,7 @@ export class MusicQueue extends Queue {
   lastControlMessage?: Message;
   timeoutTimer?: NodeJS.Timeout;
   lockUpdate = false;
-  channel?: TextBasedChannel;
+  channel?: Exclude<TextBasedChannel, StageChannel>;
 
   get isPlaying(): boolean {
     return this.lavaPlayer.status === Status.PLAYING;
@@ -33,6 +34,12 @@ export class MusicQueue extends Queue {
   constructor(player: Player, guildId: string) {
     super(player, guildId);
     setInterval(() => this.updateControlMessage(), 1e4);
+  }
+
+  private async deleteMessage(message: Message): Promise<void> {
+    if (message.deletable) {
+      await message.delete();
+    }
   }
 
   private controlsRow(): ActionRowBuilder<MessageActionRowComponentBuilder>[] {
@@ -121,7 +128,7 @@ export class MusicQueue extends Queue {
 
     if (!currentTrack) {
       if (this.lastControlMessage) {
-        await this.lastControlMessage.delete().catch(() => null);
+        await this.deleteMessage(this.lastControlMessage);
         this.lastControlMessage = undefined;
       }
 
@@ -185,16 +192,18 @@ export class MusicQueue extends Queue {
 
     if (!this.lastControlMessage || options?.force) {
       if (this.lastControlMessage) {
-        await this.lastControlMessage.delete().catch(() => null);
+        await this.deleteMessage(this.lastControlMessage);
         this.lastControlMessage = undefined;
       }
 
-      const msg = await this.channel?.send(pMsg).catch(() => null);
+      const msg = await this.channel?.send(pMsg);
       if (msg) {
         this.lastControlMessage = msg;
       }
     } else {
-      await this.lastControlMessage.edit(pMsg).catch(() => null);
+      if (this.lastControlMessage.editable) {
+        await this.lastControlMessage.edit(pMsg);
+      }
     }
 
     this.lockUpdate = false;
@@ -211,7 +220,7 @@ export class MusicQueue extends Queue {
       });
 
       if (pMsg instanceof Message) {
-        setTimeout(() => pMsg.delete().catch(() => null), 3000);
+        setTimeout(() => this.deleteMessage(pMsg), 3000);
       }
       return;
     }
@@ -221,7 +230,7 @@ export class MusicQueue extends Queue {
         `> Playing **${this.currentTrack.info.title}**`
       );
       if (pMsg instanceof Message) {
-        setTimeout(() => pMsg.delete().catch(() => null), 1e4);
+        setTimeout(() => this.deleteMessage(pMsg), 1e4);
       }
       return;
     }
@@ -259,17 +268,13 @@ export class MusicQueue extends Queue {
     await new Pagination(interaction, pageOptions, {
       enableExit: true,
       onTimeout: (index, message) => {
-        if (message.deletable) {
-          message.delete().catch(() => null);
-        }
+        this.deleteMessage(message);
       },
       time: 6e4,
       type:
         Math.round(this.size / 10) <= 5
           ? PaginationType.Button
           : PaginationType.SelectMenu,
-    })
-      .send()
-      .catch(() => null);
+    }).send();
   }
 }
