@@ -44,6 +44,12 @@ export class MyQueue extends Queue {
     // empty constructor
   }
 
+  private async deleteMessage(message: Message): Promise<void> {
+    if (message.deletable) {
+      await message.delete();
+    }
+  }
+
   public fromMS(duration: number): string {
     const seconds = Math.floor((duration / 1e3) % 60);
     const minutes = Math.floor((duration / 6e4) % 60);
@@ -152,9 +158,7 @@ export class MyQueue extends Queue {
     const nextTrack = this.nextTrack;
     if (!currentTrack) {
       if (this.lastControlMessage) {
-        if (this.lastControlMessage.deletable) {
-          await this.lastControlMessage.delete();
-        }
+        await this.deleteMessage(this.lastControlMessage);
         this.lastControlMessage = undefined;
       }
       this.lockUpdate = false;
@@ -219,29 +223,22 @@ export class MyQueue extends Queue {
     };
 
     if (!this.isReady && this.lastControlMessage) {
-      if (this.lastControlMessage.deletable) {
-        await this.lastControlMessage.delete();
-      }
+      await this.deleteMessage(this.lastControlMessage);
       this.lastControlMessage = undefined;
       this.lockUpdate = false;
       return;
     }
 
-    try {
-      if (!this.lastControlMessage || options?.force) {
-        if (this.lastControlMessage) {
-          if (this.lastControlMessage.deletable) {
-            await this.lastControlMessage.delete();
-          }
-          this.lastControlMessage = undefined;
-        }
-        this.lastControlMessage = await this.channel?.send(pMsg);
-      } else {
+    if (!this.lastControlMessage || options?.force) {
+      if (this.lastControlMessage) {
+        await this.deleteMessage(this.lastControlMessage);
+        this.lastControlMessage = undefined;
+      }
+      this.lastControlMessage = await this.channel?.send(pMsg);
+    } else {
+      if (this.lastControlMessage.editable) {
         await this.lastControlMessage.edit(pMsg);
       }
-    } catch (err) {
-      // ignore
-      console.log(err);
     }
 
     this.lockUpdate = false;
@@ -257,7 +254,7 @@ export class MyQueue extends Queue {
         ephemeral: true,
       });
       if (pMsg instanceof Message) {
-        setTimeout(() => pMsg.delete(), 3000);
+        setTimeout(() => this.deleteMessage(pMsg), 3000);
       }
       return;
     }
@@ -267,7 +264,7 @@ export class MyQueue extends Queue {
         `> Playing **${currentTrack.metadata.title}**`
       );
       if (pMsg instanceof Message) {
-        setTimeout(() => pMsg.delete(), 1e4);
+        setTimeout(() => this.deleteMessage(pMsg), 1e4);
       }
       return;
     }
@@ -303,9 +300,7 @@ export class MyQueue extends Queue {
     await new Pagination(interaction, pageOptions, {
       enableExit: true,
       onTimeout: (index, message) => {
-        if (message.deletable) {
-          message.delete();
-        }
+        this.deleteMessage(message);
       },
       time: 6e4,
       type:
