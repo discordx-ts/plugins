@@ -2,6 +2,7 @@ import { YoutubeTrack } from "@discordx/music";
 import type { CommandInteraction, Guild } from "discord.js";
 import {
   ApplicationCommandOptionType,
+  ChannelType,
   EmbedBuilder,
   GuildMember,
 } from "discord.js";
@@ -92,6 +93,7 @@ export class music {
     if (
       !interaction.guild ||
       !interaction.channel ||
+      interaction.channel.type === ChannelType.GuildStageVoice ||
       !(interaction.member instanceof GuildMember)
     ) {
       interaction.reply(
@@ -205,6 +207,7 @@ export class music {
     if (
       !interaction.guild ||
       !interaction.channel ||
+      interaction.channel.type === ChannelType.GuildStageVoice ||
       !(interaction.member instanceof GuildMember)
     ) {
       interaction.reply(
@@ -394,7 +397,8 @@ export class music {
     if (
       !interaction.guild ||
       !(interaction.member instanceof GuildMember) ||
-      !interaction.channel
+      !interaction.channel ||
+      interaction.channel.type === ChannelType.GuildStageVoice
     ) {
       interaction.reply(
         "> Your request could not be processed, please try again later"

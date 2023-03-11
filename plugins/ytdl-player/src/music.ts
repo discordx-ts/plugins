@@ -9,6 +9,7 @@ import type {
   ContextMenuCommandInteraction,
   Guild,
   MessageActionRowComponentBuilder,
+  StageChannel,
   TextBasedChannel,
 } from "discord.js";
 import {
@@ -33,7 +34,11 @@ export class MyQueue extends Queue {
     return this.toMS(track.metadata.info.duration);
   }
 
-  constructor(player: Player, guild: Guild, public channel?: TextBasedChannel) {
+  constructor(
+    player: Player,
+    guild: Guild,
+    public channel?: Exclude<TextBasedChannel, StageChannel>
+  ) {
     super(player, guild);
     setInterval(() => this.updateControlMessage(), 1e4);
     // empty constructor
@@ -147,7 +152,9 @@ export class MyQueue extends Queue {
     const nextTrack = this.nextTrack;
     if (!currentTrack) {
       if (this.lastControlMessage) {
-        await this.lastControlMessage.delete();
+        if (this.lastControlMessage.deletable) {
+          await this.lastControlMessage.delete();
+        }
         this.lastControlMessage = undefined;
       }
       this.lockUpdate = false;
@@ -211,8 +218,10 @@ export class MyQueue extends Queue {
       embeds: [embed],
     };
 
-    if (!this.isReady && this.lastControlMessage && this.lastControlMessage.deletable) {
-      await this.lastControlMessage.delete();
+    if (!this.isReady && this.lastControlMessage) {
+      if (this.lastControlMessage.deletable) {
+        await this.lastControlMessage.delete();
+      }
       this.lastControlMessage = undefined;
       this.lockUpdate = false;
       return;
@@ -220,8 +229,10 @@ export class MyQueue extends Queue {
 
     try {
       if (!this.lastControlMessage || options?.force) {
-        if (this.lastControlMessage && this.lastControlMessage.deletable) {
-          await this.lastControlMessage.delete();
+        if (this.lastControlMessage) {
+          if (this.lastControlMessage.deletable) {
+            await this.lastControlMessage.delete();
+          }
           this.lastControlMessage = undefined;
         }
         this.lastControlMessage = await this.channel?.send(pMsg);
@@ -377,7 +388,10 @@ export class MyPlayer extends Player {
     });
   }
 
-  getQueue(guild: Guild, channel?: TextBasedChannel): MyQueue {
+  getQueue(
+    guild: Guild,
+    channel?: Exclude<TextBasedChannel, StageChannel>
+  ): MyQueue {
     return super.queue<MyQueue>(guild, () => new MyQueue(this, guild, channel));
   }
 }
