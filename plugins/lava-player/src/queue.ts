@@ -190,20 +190,23 @@ export class MusicQueue extends Queue {
       embeds: [embed],
     };
 
-    if (!this.lastControlMessage || options?.force) {
-      if (this.lastControlMessage) {
-        await this.deleteMessage(this.lastControlMessage);
-        this.lastControlMessage = undefined;
+    try {
+      if (!this.lastControlMessage || options?.force) {
+        if (this.lastControlMessage) {
+          await this.deleteMessage(this.lastControlMessage);
+          this.lastControlMessage = undefined;
+        }
+        this.lastControlMessage = await this.channel?.send(pMsg);
+      } else {
+        if (this.lastControlMessage.editable) {
+          await this.lastControlMessage.edit(pMsg);
+        }
       }
-
-      const msg = await this.channel?.send(pMsg);
-      if (msg) {
-        this.lastControlMessage = msg;
-      }
-    } else {
-      if (this.lastControlMessage.editable) {
-        await this.lastControlMessage.edit(pMsg);
-      }
+    } catch (e) {
+      this.lastControlMessage = await this.channel?.send({
+        components: [...this.controlsRow()],
+        embeds: [embed],
+      });
     }
 
     this.lockUpdate = false;
