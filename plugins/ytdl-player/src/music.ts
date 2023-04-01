@@ -229,16 +229,20 @@ export class MyQueue extends Queue {
       return;
     }
 
-    if (!this.lastControlMessage || options?.force) {
-      if (this.lastControlMessage) {
-        await this.deleteMessage(this.lastControlMessage);
-        this.lastControlMessage = undefined;
+    try {
+      if (!this.lastControlMessage || options?.force) {
+        if (this.lastControlMessage) {
+          await this.deleteMessage(this.lastControlMessage);
+          this.lastControlMessage = undefined;
+        }
+        this.lastControlMessage = await this.channel?.send(pMsg);
+      } else {
+        if (this.lastControlMessage.editable) {
+          await this.lastControlMessage.edit(pMsg);
+        }
       }
-      this.lastControlMessage = await this.channel?.send(pMsg);
-    } else {
-      if (this.lastControlMessage.editable) {
-        await this.lastControlMessage.edit(pMsg);
-      }
+    } catch (e) {
+      this.lastControlMessage = await this.channel?.send({ components: [...this.controlsRow()], embeds: [embed], });
     }
 
     this.lockUpdate = false;
