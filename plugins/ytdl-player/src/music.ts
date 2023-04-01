@@ -242,7 +242,10 @@ export class MyQueue extends Queue {
         }
       }
     } catch (e) {
-      this.lastControlMessage = await this.channel?.send({ components: [...this.controlsRow()], embeds: [embed], });
+      this.lastControlMessage = await this.channel?.send({
+        components: [...this.controlsRow()],
+        embeds: [embed],
+      });
     }
 
     this.lockUpdate = false;
