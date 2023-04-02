@@ -9,6 +9,7 @@ import {
 import type {
   CommandInteraction,
   ContextMenuCommandInteraction,
+  DiscordAPIError,
   MessageActionRowComponentBuilder,
   StageChannel,
   TextBasedChannel,
@@ -203,7 +204,16 @@ export class MusicQueue extends Queue {
       }
     } else {
       if (this.lastControlMessage.editable) {
-        await this.lastControlMessage.edit(pMsg);
+        await this.lastControlMessage
+          .edit(pMsg)
+          .catch(async (err: DiscordAPIError) => {
+            if (err.code === 10008) {
+              // message is maybe deleted, try to resend new controls
+              this.lastControlMessage = await this.channel?.send(pMsg);
+            } else {
+              throw err;
+            }
+          });
       }
     }
 

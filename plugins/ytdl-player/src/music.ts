@@ -7,6 +7,7 @@ import {
 import type {
   CommandInteraction,
   ContextMenuCommandInteraction,
+  DiscordAPIError,
   Guild,
   MessageActionRowComponentBuilder,
   StageChannel,
@@ -238,7 +239,16 @@ export class MyQueue extends Queue {
       this.lastControlMessage = await this.channel?.send(pMsg);
     } else {
       if (this.lastControlMessage.editable) {
-        await this.lastControlMessage.edit(pMsg);
+        await this.lastControlMessage
+          .edit(pMsg)
+          .catch(async (err: DiscordAPIError) => {
+            if (err.code === 10008) {
+              // message is maybe deleted, try to resend new controls
+              this.lastControlMessage = await this.channel?.send(pMsg);
+            } else {
+              throw err;
+            }
+          });
       }
     }
 
