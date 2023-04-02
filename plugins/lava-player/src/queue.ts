@@ -38,7 +38,8 @@ export class MusicQueue extends Queue {
 
   private async deleteMessage(message: Message): Promise<void> {
     if (message.deletable) {
-      await message.delete();
+      // ignore any exceptions in delete action
+      await message.delete().catch(() => null);
     }
   }
 
