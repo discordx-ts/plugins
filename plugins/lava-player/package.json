@@ -20,14 +20,14 @@
     "build:changelog": "npx @discordx/changelog@latest --src src"
   },
   "dependencies": {
-    "@discordx/importer": "^1.2.1",
+    "@discordx/importer": "^1.2.2",
     "@discordx/lava-player": "^1.0.11",
     "@discordx/lava-queue": "^1.1.1",
     "@discordx/pagination": "^3.4.1"
   },
   "devDependencies": {
-    "discord.js": "^14.8.0",
-    "discordx": "^11.7.4",
+    "discord.js": "^14.11.0",
+    "discordx": "^11.7.6",
     "ts-node": "^10.9.1"
   },
   "publishConfig": {
