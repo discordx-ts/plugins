@@ -1,298 +1,114 @@
-import { YoutubeTrack } from "@discordx/music";
-import type { CommandInteraction, Guild } from "discord.js";
+import { AudioPlayerStatus } from "@discordjs/voice";
+import { QueueNode, RepeatMode } from "@discordx/music";
+import type { Client, CommandInteraction, Guild } from "discord.js";
 import {
   ApplicationCommandOptionType,
-  ChannelType,
   EmbedBuilder,
   GuildMember,
 } from "discord.js";
 import type { ArgsOf } from "discordx";
-import {
-  ButtonComponent,
-  Discord,
-  On,
-  Slash,
-  SlashGroup,
-  SlashOption,
-} from "discordx";
+import { ButtonComponent, Discord, On, Slash, SlashOption } from "discordx";
 import fetch from "isomorphic-unfetch";
 import spotifyUrlInfo from "spotify-url-info";
 import YouTube from "youtube-sr";
 
-import type { MyQueue } from "./music.js";
-import { MyPlayer } from "./music.js";
+import { formatDurationFromMS, Queue } from "./queue.js";
 
 const spotify = spotifyUrlInfo(fetch);
 
 @Discord()
-// Create music group
-@SlashGroup({ description: "music", name: "music" })
-// Assign all slashes to music group
-@SlashGroup("music")
 export class music {
-  player;
+  queueNode: QueueNode | null = null;
+  guildQueue = new Map<string, Queue>();
 
-  constructor() {
-    this.player = new MyPlayer();
-  }
-
-  @On()
-  voiceStateUpdate([oldState, newState]: ArgsOf<"voiceStateUpdate">): void {
-    const queue = this.player.getQueue(oldState.guild);
-
-    if (
-      !queue.isReady ||
-      !queue.voiceChannelId ||
-      (oldState.channelId !== queue.voiceChannelId &&
-        newState.channelId !== queue.voiceChannelId) ||
-      !queue.channel
-    ) {
-      return;
+  getQueue({ client, guildId }: { client: Client; guildId: string }): Queue {
+    if (!this.queueNode) {
+      this.queueNode = new QueueNode(client);
     }
 
-    const channel =
-      oldState.channelId === queue.voiceChannelId
-        ? oldState.channel
-        : newState.channel;
+    let queue = this.guildQueue.get(guildId);
+    if (!queue) {
+      queue = new Queue({
+        client,
+        guildId,
+        queueNode: this.queueNode,
+      });
 
-    if (!channel) {
-      return;
-    }
-
-    const totalMembers = channel.members.filter((m) => !m.user.bot);
-
-    if (queue.isPlaying && !totalMembers.size) {
-      queue.pause();
-      queue.channel.send(
-        "> To save resources, I have paused the queue since everyone has left my voice channel."
-      );
-
-      if (queue.timeoutTimer) {
-        clearTimeout(queue.timeoutTimer);
-      }
-
-      queue.timeoutTimer = setTimeout(() => {
-        queue.channel?.send(
-          "> My voice channel has been open for 5 minutes and no one has joined, so the queue has been deleted."
-        );
-        queue.leave();
-      }, 5 * 60 * 1000);
-    } else if (queue.isPause && totalMembers.size) {
-      if (queue.timeoutTimer) {
-        clearTimeout(queue.timeoutTimer);
-        queue.timeoutTimer = undefined;
-      }
-      queue.resume();
-      queue.channel.send(
-        "> There has been a new participant in my voice channel, and the queue will be resumed. Enjoy the music 🎶"
-      );
-    }
-  }
-
-  validateControlInteraction(interaction: CommandInteraction): MyQueue | null {
-    if (
-      !interaction.guild ||
-      !interaction.channel ||
-      interaction.channel.type === ChannelType.GuildStageVoice ||
-      !(interaction.member instanceof GuildMember)
-    ) {
-      interaction.reply(
-        "> Your request could not be processed, please try again later"
-      );
-      return null;
-    }
-
-    const queue = this.player.getQueue(interaction.guild, interaction.channel);
-
-    if (interaction.member.voice.channelId !== queue.voiceChannelId) {
-      interaction.reply(
-        "> To use the controls, you need to join the bot voice channel"
-      );
-
-      setTimeout(() => interaction.deleteReply(), 15e3);
-      return null;
+      this.guildQueue.set(guildId, queue);
     }
 
     return queue;
   }
 
-  @ButtonComponent({ id: "btn-next" })
-  async nextControl(interaction: CommandInteraction): Promise<void> {
-    const queue = this.validateControlInteraction(interaction);
-    if (!queue) {
-      return;
-    }
-    queue.skip();
-    await interaction.deferReply();
-    interaction.deleteReply();
-  }
-
-  @ButtonComponent({ id: "btn-pause" })
-  async pauseControl(interaction: CommandInteraction): Promise<void> {
-    const queue = this.validateControlInteraction(interaction);
-    if (!queue) {
-      return;
-    }
-    queue.isPause ? queue.resume() : queue.pause();
-    await interaction.deferReply();
-    interaction.deleteReply();
-  }
-
-  @ButtonComponent({ id: "btn-leave" })
-  async leaveControl(interaction: CommandInteraction): Promise<void> {
-    const queue = this.validateControlInteraction(interaction);
-    if (!queue) {
-      return;
-    }
-    queue.leave();
-    await interaction.deferReply();
-    interaction.deleteReply();
-  }
-
-  @ButtonComponent({ id: "btn-repeat" })
-  async repeatControl(interaction: CommandInteraction): Promise<void> {
-    const queue = this.validateControlInteraction(interaction);
-    if (!queue) {
-      return;
-    }
-    queue.setRepeat(!queue.repeat);
-    await interaction.deferReply();
-    interaction.deleteReply();
-  }
-
-  @ButtonComponent({ id: "btn-queue" })
-  queueControl(interaction: CommandInteraction): void {
-    const queue = this.validateControlInteraction(interaction);
-    if (!queue) {
-      return;
-    }
-    queue.view(interaction);
-  }
-
-  @ButtonComponent({ id: "btn-mix" })
-  async mixControl(interaction: CommandInteraction): Promise<void> {
-    const queue = this.validateControlInteraction(interaction);
-    if (!queue) {
-      return;
-    }
-    queue.mix();
-    await interaction.deferReply();
-    interaction.deleteReply();
-  }
-
-  @ButtonComponent({ id: "btn-controls" })
-  async controlsControl(interaction: CommandInteraction): Promise<void> {
-    const queue = this.validateControlInteraction(interaction);
-    if (!queue) {
-      return;
-    }
-    queue.updateControlMessage({ force: true });
-    await interaction.deferReply();
-    interaction.deleteReply();
-  }
-
-  @ButtonComponent({ id: "btn-loop" })
-  async loopControl(interaction: CommandInteraction): Promise<void> {
-    const queue = this.validateControlInteraction(interaction);
-
-    if (!queue) {
-      return;
-    }
-    queue.setLoop(!queue.loop);
-    await interaction.deferReply();
-    interaction.deleteReply();
-  }
-
-  async processJoin(interaction: CommandInteraction): Promise<MyQueue | null> {
-    if (
-      !interaction.guild ||
-      !interaction.channel ||
-      interaction.channel.type === ChannelType.GuildStageVoice ||
-      !(interaction.member instanceof GuildMember)
-    ) {
-      interaction.reply(
-        "> Your request could not be processed, please try again later"
-      );
-
-      setTimeout(() => interaction.deleteReply(), 15e3);
-      return null;
-    }
-
-    if (
-      !(interaction.member instanceof GuildMember) ||
-      !interaction.member.voice.channel
-    ) {
-      interaction.reply("> You are not in the voice channel");
-
-      setTimeout(() => interaction.deleteReply(), 15e3);
-      return null;
-    }
-
-    await interaction.deferReply();
-    const queue = this.player.getQueue(interaction.guild, interaction.channel);
-
-    if (!queue.isReady) {
-      queue.channel = interaction.channel;
-      await queue.join(interaction.member.voice.channel);
-    }
-
-    return queue;
-  }
-
-  @Slash({ description: "Play a spotify link" })
-  async spotify(
-    @SlashOption({
-      description: "spotify url",
-      name: "url",
-      required: true,
-      type: ApplicationCommandOptionType.String,
-    })
-    spotifyURL: string,
+  async processJoin(
     interaction: CommandInteraction
-  ): Promise<void> {
-    const queue = await this.processJoin(interaction);
-    if (!queue) {
-      return;
-    }
+  ): Promise<{ guild: Guild; member: GuildMember; queue: Queue } | null> {
+    await interaction.deferReply();
 
-    const result = await spotify.getTracks(spotifyURL).catch(() => null);
-    if (result === null) {
+    if (
+      !interaction.guild ||
+      !interaction.channel ||
+      !(interaction.member instanceof GuildMember)
+    ) {
       interaction.followUp(
-        "The Spotify url you provided appears to be invalid, make sure that you have provided a valid url for Spotify"
+        "> I apologize, but I am currently unable to process your request. Please try again later."
       );
-      return;
+
+      setTimeout(() => interaction.deleteReply(), 15e3);
+      return null;
     }
 
-    const videos = await Promise.all(
-      result.map((track) =>
-        YouTube.searchOne(`${track.name} by ${track.artist}`)
-      )
-    );
+    const { guild, member } = interaction;
 
-    const tracks = videos.map(
-      (video) =>
-        new YoutubeTrack({
-          duration: video.durationFormatted,
-          thumbnail: video.thumbnail?.url,
-          title: video.title ?? "NaN",
-          url: video.url,
-          user: interaction.user,
-        })
-    );
+    if (!member.voice.channel) {
+      interaction.followUp(
+        "> It seems like you are not currently in a voice channel"
+      );
 
-    queue.playTrack(tracks);
+      setTimeout(() => interaction.deleteReply(), 15e3);
+      return null;
+    }
 
-    const embed = new EmbedBuilder();
+    const queue = this.getQueue({
+      client: interaction.client,
+      guildId: guild.id,
+    });
 
-    embed.setTitle("Enqueued");
-    embed.setDescription(
-      `Enqueued  **${tracks.length}** songs from spotify playlist`
-    );
+    const bot = guild.members.cache.get(interaction.client.user.id);
+    if (!bot?.voice.channelId) {
+      queue.setChannel(interaction.channel);
+      queue.join({
+        channelId: member.voice.channel.id,
+        guildId: guild.id,
+      });
+    } else if (bot.voice.channelId !== member.voice.channelId) {
+      interaction.followUp(
+        "> I am not in your voice channel, therefore I cannot execute your request"
+      );
 
-    interaction.followUp({ embeds: [embed] });
+      setTimeout(() => interaction.deleteReply(), 15e3);
+      return null;
+    }
+
+    return { guild, member, queue };
   }
 
-  @Slash({ description: "Play a song" })
+  @On({ event: "voiceStateUpdate" })
+  handleVoiceState([, newState]: ArgsOf<"voiceStateUpdate">): void {
+    if (
+      newState.member?.user.id === newState.client.user.id &&
+      newState.channelId === null
+    ) {
+      const guildId = newState.guild.id;
+      const queue = this.guildQueue.get(guildId);
+      if (queue) {
+        queue.exit();
+        this.guildQueue.delete(guildId);
+      }
+    }
+  }
+
+  @Slash({ description: "Play a song", name: "play" })
   async play(
     @SlashOption({
       description: "song url or title",
@@ -301,54 +117,82 @@ export class music {
       type: ApplicationCommandOptionType.String,
     })
     songName: string,
+    @SlashOption({
+      description: "Start song from specific time",
+      name: "seek",
+      required: false,
+      type: ApplicationCommandOptionType.Number,
+    })
+    seek: number | undefined,
     interaction: CommandInteraction
   ): Promise<void> {
-    const queue = await this.processJoin(interaction);
-    if (!queue) {
+    const rq = await this.processJoin(interaction);
+    if (!rq) {
       return;
     }
+
+    const { queue, member } = rq;
 
     const video = await YouTube.searchOne(songName).catch(() => null);
-
     if (!video) {
-      interaction.followUp("The song could not be found");
+      interaction.followUp(
+        `> Could not found song with keyword: \`${songName}\``
+      );
       return;
     }
 
-    const track = new YoutubeTrack({
-      duration: video.durationFormatted,
+    queue.addTrack({
+      duration: video.duration,
+      seek,
       thumbnail: video.thumbnail?.url,
       title: video.title ?? "NaN",
       url: video.url,
-      user: interaction.user,
+      user: member.user,
     });
 
-    queue.playTrack(track);
+    if (!queue.currentTrack) {
+      queue.playNext();
+    }
 
     const embed = new EmbedBuilder();
     embed.setTitle("Enqueued");
-    embed.setDescription(`Enqueued song **${video.title}****`);
+    embed.setDescription(
+      `Enqueued song **${video.title} (${formatDurationFromMS(
+        video.duration
+      )})**`
+    );
+
     if (video.thumbnail?.url) {
       embed.setThumbnail(video.thumbnail?.url);
     }
+
     interaction.followUp({ embeds: [embed] });
   }
 
-  @Slash({ description: "Play a playlist" })
+  @Slash({ description: "Play youtube playlist", name: "playlist" })
   async playlist(
     @SlashOption({
-      description: "playlist name",
+      description: "Playlist name or url",
       name: "playlist",
       required: true,
       type: ApplicationCommandOptionType.String,
     })
     playlistName: string,
+    @SlashOption({
+      description: "Start song from specific time",
+      name: "seek",
+      required: false,
+      type: ApplicationCommandOptionType.Number,
+    })
+    seek: number | undefined,
     interaction: CommandInteraction
   ): Promise<void> {
-    const queue = await this.processJoin(interaction);
-    if (!queue) {
+    const rq = await this.processJoin(interaction);
+    if (!rq) {
       return;
     }
+
+    const { queue, member } = rq;
 
     const search = await YouTube.search(playlistName, {
       limit: 1,
@@ -364,21 +208,22 @@ export class music {
 
     const pl = await YouTube.getPlaylist(playlist.id, { fetchAll: true });
 
-    const tracks = pl.videos.map(
-      (video) =>
-        new YoutubeTrack({
-          duration: video.durationFormatted,
-          thumbnail: video.thumbnail?.url,
-          title: video.title ?? "NaN",
-          url: video.url,
-          user: interaction.user,
-        })
-    );
+    const tracks = pl.videos.map((video) => ({
+      duration: video.duration,
+      seek,
+      thumbnail: video.thumbnail?.url,
+      title: video.title ?? "NaN",
+      url: video.url,
+      user: member.user,
+    }));
 
-    queue.playTrack(tracks);
+    queue.addTrack(...tracks);
+
+    if (!queue.currentTrack) {
+      queue.playNext();
+    }
 
     const embed = new EmbedBuilder();
-
     embed.setTitle("Enqueued");
     embed.setDescription(
       `Enqueued  **${tracks.length}** songs from playlist **${playlist.title}**`
@@ -391,151 +236,414 @@ export class music {
     interaction.followUp({ embeds: [embed] });
   }
 
-  validateInteraction(
+  @Slash({ description: "Play a spotify link", name: "spotify" })
+  async spotify(
+    @SlashOption({
+      description: "Spotify url",
+      name: "url",
+      required: true,
+      type: ApplicationCommandOptionType.String,
+    })
+    url: string,
+    @SlashOption({
+      description: "Start song from specific time",
+      name: "seek",
+      required: false,
+      type: ApplicationCommandOptionType.Number,
+    })
+    seek: number | undefined,
     interaction: CommandInteraction
-  ): null | { guild: Guild; member: GuildMember; queue: MyQueue } {
-    if (
-      !interaction.guild ||
-      !(interaction.member instanceof GuildMember) ||
-      !interaction.channel ||
-      interaction.channel.type === ChannelType.GuildStageVoice
-    ) {
-      interaction.reply(
-        "> Your request could not be processed, please try again later"
-      );
-
-      setTimeout(() => interaction.deleteReply(), 15e3);
-      return null;
-    }
-
-    if (!interaction.member.voice.channel) {
-      interaction.reply(
-        "> To use the music commands, you need to join voice channel"
-      );
-
-      setTimeout(() => interaction.deleteReply(), 15e3);
-      return null;
-    }
-
-    const queue = this.player.getQueue(interaction.guild, interaction.channel);
-
-    if (
-      !queue.isReady ||
-      interaction.member.voice.channel.id !== queue.voiceChannelId
-    ) {
-      interaction.reply(
-        "> To use the music commands, you need to join the bot voice channel"
-      );
-
-      setTimeout(() => interaction.deleteReply(), 15e3);
-      return null;
-    }
-
-    return { guild: interaction.guild, member: interaction.member, queue };
-  }
-
-  @Slash({ description: "skip track" })
-  skip(interaction: CommandInteraction): void {
-    const validate = this.validateInteraction(interaction);
-    if (!validate) {
+  ): Promise<void> {
+    const rq = await this.processJoin(interaction);
+    if (!rq) {
       return;
     }
 
-    const { queue } = validate;
+    const { queue, member } = rq;
 
+    const result = await spotify.getTracks(url).catch(() => null);
+    if (result === null) {
+      interaction.followUp(
+        "The Spotify url you provided appears to be invalid, make sure that you have provided a valid url for Spotify"
+      );
+      return;
+    }
+
+    const videos = await Promise.all(
+      result.map((track) =>
+        YouTube.searchOne(`${track.name} by ${track.artist}`)
+      )
+    );
+
+    const tracks = videos.map((video) => ({
+      duration: video.duration,
+      seek,
+      thumbnail: video.thumbnail?.url,
+      title: video.title ?? "NaN",
+      url: video.url,
+      user: member.user,
+    }));
+
+    queue.addTrack(...tracks);
+
+    if (!queue.currentTrack) {
+      queue.playNext();
+    }
+
+    const embed = new EmbedBuilder();
+    embed.setTitle("Enqueued");
+    embed.setDescription(
+      `Enqueued  **${tracks.length}** songs from spotify playlist`
+    );
+
+    interaction.followUp({ embeds: [embed] });
+  }
+
+  @Slash({ description: "Play current song on specific time", name: "seek" })
+  async seek(
+    @SlashOption({
+      description: "time in seconds",
+      name: "seconds",
+      required: true,
+      type: ApplicationCommandOptionType.Number,
+    })
+    seconds: number,
+    interaction: CommandInteraction
+  ): Promise<void> {
+    const rq = await this.processJoin(interaction);
+    if (!rq) {
+      return;
+    }
+
+    const { queue } = rq;
+
+    const currentTrack = queue.currentTrack;
+
+    if (!currentTrack) {
+      interaction.followUp(
+        "> There doesn't seem to be anything to seek at the moment."
+      );
+      return;
+    }
+
+    const time = seconds * 1000;
+
+    if (time >= currentTrack.duration) {
+      interaction.followUp(
+        `> Time should not be greater then ${formatDurationFromMS(
+          currentTrack.duration
+        )}`
+      );
+      return;
+    }
+
+    currentTrack.seek = seconds;
+    queue.addTrackFirst(currentTrack);
     queue.skip();
-    interaction.reply("> skipped current song");
+
+    const embed = new EmbedBuilder();
+    embed.setTitle("Seeked");
+    embed.setDescription(
+      `Playing **${currentTrack.title}**** from **${formatDurationFromMS(
+        time
+      )}/${formatDurationFromMS(currentTrack.duration)}**`
+    );
+
+    interaction.followUp({ embeds: [embed] });
   }
 
-  @Slash({ description: "mix tracks" })
-  mix(interaction: CommandInteraction): void {
-    const validate = this.validateInteraction(interaction);
-    if (!validate) {
+  @Slash({ description: "View queue", name: "queue" })
+  async queue(interaction: CommandInteraction): Promise<void> {
+    const rq = await this.processJoin(interaction);
+    if (!rq) {
       return;
     }
 
-    const { queue } = validate;
-
-    queue.mix();
-    interaction.reply("> mixed current queue");
+    const { queue } = rq;
+    queue.view(interaction);
   }
 
-  @Slash({ description: "pause music" })
-  pause(interaction: CommandInteraction): void {
-    const validate = this.validateInteraction(interaction);
-    if (!validate) {
+  @Slash({ description: "Pause current track", name: "pause" })
+  async pause(interaction: CommandInteraction): Promise<void> {
+    const rq = await this.processJoin(interaction);
+    if (!rq) {
       return;
     }
 
-    const { queue } = validate;
+    const { queue } = rq;
 
-    if (queue.isPause) {
-      interaction.reply("> already paused");
+    const currentTrack = queue.currentTrack;
+
+    if (!currentTrack || !queue.isPlaying) {
+      interaction.followUp("> I am already quite, amigo!");
       return;
     }
 
     queue.pause();
-    interaction.reply("> paused music");
+    interaction.followUp(`> paused ${currentTrack.title}`);
   }
 
-  @Slash({ description: "resume music" })
-  resume(interaction: CommandInteraction): void {
-    const validate = this.validateInteraction(interaction);
-    if (!validate) {
+  @Slash({ description: "Resume current track", name: "resume" })
+  async resume(interaction: CommandInteraction): Promise<void> {
+    const rq = await this.processJoin(interaction);
+    if (!rq) {
       return;
     }
 
-    const { queue } = validate;
+    const { queue } = rq;
 
-    if (queue.isPlaying) {
-      interaction.reply("> already playing");
+    const currentTrack = queue.currentTrack;
+
+    if (!currentTrack || queue.isPlaying) {
+      interaction.followUp("> no no no, I am already doing my best, amigo!");
       return;
     }
 
-    queue.resume();
-    interaction.reply("> resumed music");
+    queue.unpause();
+    interaction.followUp(`> resuming ${currentTrack.title}`);
   }
 
-  @Slash({ description: "seek music" })
-  seek(
+  @Slash({ description: "Skip current song", name: "skip" })
+  async skip(interaction: CommandInteraction): Promise<void> {
+    const rq = await this.processJoin(interaction);
+    if (!rq) {
+      return;
+    }
+
+    const { queue } = rq;
+
+    const currentTrack = queue.currentTrack;
+
+    if (!currentTrack) {
+      interaction.followUp(
+        "> There doesn't seem to be anything to skip at the moment."
+      );
+      return;
+    }
+
+    queue.skip();
+    interaction.followUp(`> skipped ${currentTrack.title}`);
+  }
+
+  @Slash({ description: "Set volume", name: "set-volume" })
+  async setVolume(
     @SlashOption({
-      description: "seek time in seconds",
-      name: "time",
+      description: "Set volume",
+      maxValue: 100,
+      minValue: 0,
+      name: "volume",
       required: true,
       type: ApplicationCommandOptionType.Number,
     })
-    time: number,
+    volume: number,
     interaction: CommandInteraction
-  ): void {
-    const validate = this.validateInteraction(interaction);
-    if (!validate) {
+  ): Promise<void> {
+    const rq = await this.processJoin(interaction);
+    if (!rq) {
       return;
     }
 
-    const { queue } = validate;
+    const { queue } = rq;
 
-    if (!queue.isPlaying || !queue.currentTrack) {
-      interaction.reply("> currently not playing any song");
-      return;
-    }
-
-    const state = queue.seek(time * 1000);
-    if (!state) {
-      interaction.reply("> could not seek");
-      return;
-    }
-    interaction.reply("> current music seeked");
+    queue.setVolume(volume);
+    interaction.followUp(`> volume set to ${volume}`);
   }
 
-  @Slash({ description: "stop music" })
-  leave(interaction: CommandInteraction): void {
-    const validate = this.validateInteraction(interaction);
-    if (!validate) {
+  @Slash({ description: "Stop music player", name: "stop" })
+  async stop(interaction: CommandInteraction): Promise<void> {
+    const rq = await this.processJoin(interaction);
+    if (!rq) {
       return;
     }
 
-    const { queue } = validate;
-    queue.leave();
-    interaction.reply("> stopped music");
+    const { queue, guild } = rq;
+
+    queue.exit();
+    this.guildQueue.delete(guild.id);
+
+    interaction.followUp("> adios amigo, see you later!");
+  }
+
+  @Slash({ description: "Shuffle queue", name: "shuffle" })
+  async shuffle(interaction: CommandInteraction): Promise<void> {
+    const rq = await this.processJoin(interaction);
+    if (!rq) {
+      return;
+    }
+
+    const { queue } = rq;
+    queue.mix();
+    interaction.followUp("> playlist shuffled!");
+  }
+
+  @Slash({ description: "Show GUI controls", name: "gui-show" })
+  async guiShow(interaction: CommandInteraction): Promise<void> {
+    const rq = await this.processJoin(interaction);
+    if (!rq || !interaction.channel) {
+      return;
+    }
+
+    const { queue } = rq;
+
+    queue.setChannel(interaction.channel);
+    queue.startControlUpdate();
+
+    interaction.followUp("> Enable GUI mode!");
+  }
+
+  @Slash({ description: "Hide GUI controls", name: "gui-hide" })
+  async guiHide(interaction: CommandInteraction): Promise<void> {
+    const rq = await this.processJoin(interaction);
+    if (!rq || !interaction.channel) {
+      return;
+    }
+
+    const { queue } = rq;
+    queue.stopControlUpdate();
+    interaction.followUp("> Disabled GUI mode!");
+  }
+
+  @ButtonComponent({ id: "btn-next" })
+  async nextControl(interaction: CommandInteraction): Promise<void> {
+    if (!interaction.guildId) {
+      return;
+    }
+
+    const { guildId, client } = interaction;
+    const queue = this.getQueue({
+      client,
+      guildId,
+    });
+
+    queue.skip();
+
+    await interaction.deferReply();
+    interaction.deleteReply();
+  }
+
+  @ButtonComponent({ id: "btn-pause" })
+  async pauseControl(interaction: CommandInteraction): Promise<void> {
+    if (!interaction.guildId) {
+      return;
+    }
+
+    const { guildId, client } = interaction;
+    const queue = this.getQueue({
+      client,
+      guildId,
+    });
+
+    queue.playerState === AudioPlayerStatus.Paused
+      ? queue.unpause()
+      : queue.pause();
+
+    await interaction.deferReply();
+    interaction.deleteReply();
+  }
+
+  @ButtonComponent({ id: "btn-leave" })
+  async leaveControl(interaction: CommandInteraction): Promise<void> {
+    if (!interaction.guildId) {
+      return;
+    }
+
+    const { guildId, client } = interaction;
+    const queue = this.getQueue({
+      client,
+      guildId,
+    });
+
+    queue.exit();
+    this.guildQueue.delete(interaction.guildId);
+
+    await interaction.deferReply();
+    interaction.deleteReply();
+  }
+
+  @ButtonComponent({ id: "btn-repeat" })
+  async repeatControl(interaction: CommandInteraction): Promise<void> {
+    if (!interaction.guildId) {
+      return;
+    }
+
+    const { guildId, client } = interaction;
+    const queue = this.getQueue({
+      client,
+      guildId,
+    });
+
+    queue.setRepeatMode(RepeatMode.All);
+
+    await interaction.deferReply();
+    interaction.deleteReply();
+  }
+
+  @ButtonComponent({ id: "btn-queue" })
+  queueControl(interaction: CommandInteraction): void {
+    if (!interaction.guildId) {
+      return;
+    }
+
+    const { guildId, client } = interaction;
+    const queue = this.getQueue({
+      client,
+      guildId,
+    });
+
+    queue.view(interaction);
+  }
+
+  @ButtonComponent({ id: "btn-mix" })
+  async mixControl(interaction: CommandInteraction): Promise<void> {
+    if (!interaction.guildId) {
+      return;
+    }
+
+    const { guildId, client } = interaction;
+    const queue = this.getQueue({
+      client,
+      guildId,
+    });
+
+    queue.mix();
+
+    await interaction.deferReply();
+    interaction.deleteReply();
+  }
+
+  @ButtonComponent({ id: "btn-controls" })
+  async controlsControl(interaction: CommandInteraction): Promise<void> {
+    if (!interaction.guildId) {
+      return;
+    }
+
+    const { guildId, client } = interaction;
+    const queue = this.getQueue({
+      client,
+      guildId,
+    });
+
+    queue.updateControlMessage({ force: true });
+
+    await interaction.deferReply();
+    interaction.deleteReply();
+  }
+
+  @ButtonComponent({ id: "btn-loop" })
+  async loopControl(interaction: CommandInteraction): Promise<void> {
+    if (!interaction.guildId) {
+      return;
+    }
+
+    const { guildId, client } = interaction;
+    const queue = this.getQueue({
+      client,
+      guildId,
+    });
+
+    queue.setRepeatMode(RepeatMode.One);
+
+    await interaction.deferReply();
+    interaction.deleteReply();
   }
 }

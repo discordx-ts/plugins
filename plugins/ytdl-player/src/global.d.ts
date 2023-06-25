@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-interface Track {
+interface SpotifyTrack {
   artist: string;
   duration: number;
   name: string;
@@ -9,7 +9,7 @@ interface Track {
 }
 
 interface Spotify {
-  getTracks: (url: string) => Promise<Track[]>;
+  getTracks: (url: string) => Promise<SpotifyTrack[]>;
 }
 
 declare module "spotify-url-info" {
