@@ -7,7 +7,14 @@ import {
   GuildMember,
 } from "discord.js";
 import type { ArgsOf } from "discordx";
-import { ButtonComponent, Discord, On, Slash, SlashOption } from "discordx";
+import {
+  ButtonComponent,
+  Discord,
+  On,
+  Slash,
+  SlashGroup,
+  SlashOption,
+} from "discordx";
 import fetch from "isomorphic-unfetch";
 import spotifyUrlInfo from "spotify-url-info";
 import YouTube from "youtube-sr";
@@ -17,6 +24,10 @@ import { formatDurationFromMS, Queue } from "./queue.js";
 const spotify = spotifyUrlInfo(fetch);
 
 @Discord()
+// Create music group
+@SlashGroup({ description: "music", name: "music" })
+// Assign all slashes to music group
+@SlashGroup("music")
 export class music {
   queueNode: QueueNode | null = null;
   guildQueue = new Map<string, Queue>();
