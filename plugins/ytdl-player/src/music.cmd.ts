@@ -310,6 +310,39 @@ export class music {
     interaction.followUp({ embeds: [embed] });
   }
 
+  @Slash({
+    description: "Show details of currently playing song",
+    name: "current",
+  })
+  async current(interaction: CommandInteraction): Promise<void> {
+    const rq = await this.processJoin(interaction);
+    if (!rq) {
+      return;
+    }
+
+    const { queue } = rq;
+
+    const currentTrack = queue.currentTrack;
+    if (!currentTrack) {
+      interaction.followUp("> Not playing anything at the moment.");
+      return;
+    }
+
+    const embed = new EmbedBuilder();
+    embed.setTitle("Current Track");
+    embed.setDescription(
+      `Playing **${currentTrack.title}** from **${formatDurationFromMS(
+        queue.playbackInfo?.playbackDuration ?? 0
+      )}/${formatDurationFromMS(currentTrack.duration)}**`
+    );
+
+    if (currentTrack.thumbnail) {
+      embed.setImage(currentTrack.thumbnail);
+    }
+
+    interaction.followUp({ embeds: [embed] });
+  }
+
   @Slash({ description: "Play current song on specific time", name: "seek" })
   async seek(
     @SlashOption({
@@ -355,7 +388,7 @@ export class music {
     const embed = new EmbedBuilder();
     embed.setTitle("Seeked");
     embed.setDescription(
-      `Playing **${currentTrack.title}**** from **${formatDurationFromMS(
+      `Playing **${currentTrack.title}** from **${formatDurationFromMS(
         time
       )}/${formatDurationFromMS(currentTrack.duration)}**`
     );
