@@ -1,6 +1,6 @@
 {
   "name": "@discordx/plugin-lava-player",
-  "version": "0.0.0",
+  "version": "1.0.3",
   "private": false,
   "description": "lava player plugin for discordx bots",
   "license": "Apache-2.0",
