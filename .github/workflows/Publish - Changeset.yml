@@ -1,5 +1,7 @@
 name: Publish - Changeset
 
+permissions: write-all
+
 on:
   push:
     branches:
