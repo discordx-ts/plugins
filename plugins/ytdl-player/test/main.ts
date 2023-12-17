@@ -1,7 +1,6 @@
+import { YTDLPlayerPlugin } from "@discordx/plugin-ytdl-player";
 import { IntentsBitField } from "discord.js";
 import { Client, MetadataStorage } from "discordx";
-
-import { YTDLPlayerPlugin } from "../src/index.js";
 
 const ytdlPlayerPlugin = new YTDLPlayerPlugin({
   metadata: MetadataStorage.instance,

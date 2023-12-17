@@ -1,7 +1,6 @@
+import { LavaPlayerPlugin } from "@discordx/plugin-lava-player";
 import { IntentsBitField } from "discord.js";
 import { Client, MetadataStorage } from "discordx";
-
-import { LavaPlayerPlugin } from "../src/index.js";
 
 const lavaPlayerPlugin = new LavaPlayerPlugin({
   metadata: MetadataStorage.instance,
