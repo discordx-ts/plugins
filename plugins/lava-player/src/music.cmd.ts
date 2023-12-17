@@ -52,7 +52,7 @@ export class MusicPlayer {
   async ParseCommand(
     client: Client,
     interaction: CommandInteraction | ButtonInteraction,
-    skipBotChannel = false
+    skipBotChannel = false,
   ): Promise<
     | {
         channel: Exclude<TextBasedChannel, StageChannel>;
@@ -72,7 +72,7 @@ export class MusicPlayer {
       !interaction.client.user
     ) {
       interaction.followUp(
-        "The command could not be processed. Please try again"
+        "The command could not be processed. Please try again",
       );
       return;
     }
@@ -83,7 +83,7 @@ export class MusicPlayer {
     }
 
     const bot = interaction.guild?.members.cache.get(
-      interaction.client.user?.id
+      interaction.client.user?.id,
     );
 
     if (!bot) {
@@ -142,7 +142,7 @@ export class MusicPlayer {
     })
     input: string,
     interaction: CommandInteraction,
-    client: Client
+    client: Client,
   ): Promise<void> {
     const cmd = await this.ParseCommand(client, interaction, true);
     if (!cmd) {
@@ -189,11 +189,11 @@ export class MusicPlayer {
     embed.setTitle("Enqueued");
     if (response.playlistInfo.name) {
       embed.setDescription(
-        `Enqueued song ${response.tracks.length} from ${response.playlistInfo.name}`
+        `Enqueued song ${response.tracks.length} from ${response.playlistInfo.name}`,
       );
     } else if (response.tracks.length === 1) {
       embed.setDescription(
-        `Enqueued [${response.tracks[0]?.info.title}](<${response.tracks[0]?.info.uri}>)`
+        `Enqueued [${response.tracks[0]?.info.title}](<${response.tracks[0]?.info.uri}>)`,
       );
     } else {
       embed.setDescription(`Enqueued ${response.tracks.length} tracks`);
@@ -213,7 +213,7 @@ export class MusicPlayer {
     })
     seconds: number,
     interaction: CommandInteraction,
-    client: Client
+    client: Client,
   ): Promise<void> {
     const cmd = await this.ParseCommand(client, interaction);
     if (!cmd) {
@@ -249,7 +249,7 @@ export class MusicPlayer {
   @ButtonComponent({ id: "btn-next" })
   async nextControl(
     interaction: ButtonInteraction,
-    client: Client
+    client: Client,
   ): Promise<void> {
     const cmd = await this.ParseCommand(client, interaction);
     if (!cmd) {
@@ -274,7 +274,7 @@ export class MusicPlayer {
   @ButtonComponent({ id: "btn-pause" })
   async pauseControl(
     interaction: ButtonInteraction,
-    client: Client
+    client: Client,
   ): Promise<void> {
     const cmd = await this.ParseCommand(client, interaction);
     if (!cmd) {
@@ -293,7 +293,7 @@ export class MusicPlayer {
   @ButtonComponent({ id: "btn-leave" })
   async leaveControl(
     interaction: ButtonInteraction,
-    client: Client
+    client: Client,
   ): Promise<void> {
     const cmd = await this.ParseCommand(client, interaction);
     if (!cmd) {
@@ -313,7 +313,7 @@ export class MusicPlayer {
   @ButtonComponent({ id: "btn-repeat" })
   async repeatControl(
     interaction: ButtonInteraction,
-    client: Client
+    client: Client,
   ): Promise<void> {
     const cmd = await this.ParseCommand(client, interaction);
     if (!cmd) {
@@ -332,7 +332,7 @@ export class MusicPlayer {
   @ButtonComponent({ id: "btn-loop" })
   async loopControl(
     interaction: ButtonInteraction,
-    client: Client
+    client: Client,
   ): Promise<void> {
     const cmd = await this.ParseCommand(client, interaction);
     if (!cmd) {
@@ -351,7 +351,7 @@ export class MusicPlayer {
   @ButtonComponent({ id: "btn-queue" })
   async queueControl(
     interaction: ButtonInteraction,
-    client: Client
+    client: Client,
   ): Promise<void> {
     const cmd = await this.ParseCommand(client, interaction);
     if (!cmd) {
@@ -366,7 +366,7 @@ export class MusicPlayer {
   @ButtonComponent({ id: "btn-mix" })
   async mixControl(
     interaction: ButtonInteraction,
-    client: Client
+    client: Client,
   ): Promise<void> {
     const cmd = await this.ParseCommand(client, interaction);
     if (!cmd) {
@@ -385,7 +385,7 @@ export class MusicPlayer {
   @ButtonComponent({ id: "btn-controls" })
   async controlsControl(
     interaction: ButtonInteraction,
-    client: Client
+    client: Client,
   ): Promise<void> {
     const cmd = await this.ParseCommand(client, interaction);
     if (!cmd) {

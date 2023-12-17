@@ -2,5 +2,4 @@
 .turbo
 .vscode
 build
-CHANGELOG.md
 node_modules

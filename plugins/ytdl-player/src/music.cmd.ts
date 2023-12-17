@@ -52,7 +52,7 @@ export class music {
   }
 
   async processJoin(
-    interaction: CommandInteraction
+    interaction: CommandInteraction,
   ): Promise<{ guild: Guild; member: GuildMember; queue: Queue } | null> {
     await interaction.deferReply();
 
@@ -62,7 +62,7 @@ export class music {
       !(interaction.member instanceof GuildMember)
     ) {
       interaction.followUp(
-        "> I apologize, but I am currently unable to process your request. Please try again later."
+        "> I apologize, but I am currently unable to process your request. Please try again later.",
       );
 
       setTimeout(() => interaction.deleteReply(), 15e3);
@@ -73,7 +73,7 @@ export class music {
 
     if (!member.voice.channel) {
       interaction.followUp(
-        "> It seems like you are not currently in a voice channel"
+        "> It seems like you are not currently in a voice channel",
       );
 
       setTimeout(() => interaction.deleteReply(), 15e3);
@@ -94,7 +94,7 @@ export class music {
       });
     } else if (bot.voice.channelId !== member.voice.channelId) {
       interaction.followUp(
-        "> I am not in your voice channel, therefore I cannot execute your request"
+        "> I am not in your voice channel, therefore I cannot execute your request",
       );
 
       setTimeout(() => interaction.deleteReply(), 15e3);
@@ -135,7 +135,7 @@ export class music {
       type: ApplicationCommandOptionType.Number,
     })
     seek: number | undefined,
-    interaction: CommandInteraction
+    interaction: CommandInteraction,
   ): Promise<void> {
     const rq = await this.processJoin(interaction);
     if (!rq) {
@@ -147,7 +147,7 @@ export class music {
     const video = await YouTube.searchOne(songName).catch(() => null);
     if (!video) {
       interaction.followUp(
-        `> Could not found song with keyword: \`${songName}\``
+        `> Could not found song with keyword: \`${songName}\``,
       );
       return;
     }
@@ -169,8 +169,8 @@ export class music {
     embed.setTitle("Enqueued");
     embed.setDescription(
       `Enqueued song **${video.title} (${formatDurationFromMS(
-        video.duration
-      )})**`
+        video.duration,
+      )})**`,
     );
 
     if (video.thumbnail?.url) {
@@ -196,7 +196,7 @@ export class music {
       type: ApplicationCommandOptionType.Number,
     })
     seek: number | undefined,
-    interaction: CommandInteraction
+    interaction: CommandInteraction,
   ): Promise<void> {
     const rq = await this.processJoin(interaction);
     if (!rq) {
@@ -237,7 +237,7 @@ export class music {
     const embed = new EmbedBuilder();
     embed.setTitle("Enqueued");
     embed.setDescription(
-      `Enqueued  **${tracks.length}** songs from playlist **${playlist.title}**`
+      `Enqueued  **${tracks.length}** songs from playlist **${playlist.title}**`,
     );
 
     if (playlist.thumbnail?.url) {
@@ -263,7 +263,7 @@ export class music {
       type: ApplicationCommandOptionType.Number,
     })
     seek: number | undefined,
-    interaction: CommandInteraction
+    interaction: CommandInteraction,
   ): Promise<void> {
     const rq = await this.processJoin(interaction);
     if (!rq) {
@@ -275,15 +275,15 @@ export class music {
     const result = await spotify.getTracks(url).catch(() => null);
     if (result === null) {
       interaction.followUp(
-        "The Spotify url you provided appears to be invalid, make sure that you have provided a valid url for Spotify"
+        "The Spotify url you provided appears to be invalid, make sure that you have provided a valid url for Spotify",
       );
       return;
     }
 
     const videos = await Promise.all(
       result.map((track) =>
-        YouTube.searchOne(`${track.name} by ${track.artist}`)
-      )
+        YouTube.searchOne(`${track.name} by ${track.artist}`),
+      ),
     );
 
     const tracks = videos.map((video) => ({
@@ -304,7 +304,7 @@ export class music {
     const embed = new EmbedBuilder();
     embed.setTitle("Enqueued");
     embed.setDescription(
-      `Enqueued  **${tracks.length}** songs from spotify playlist`
+      `Enqueued  **${tracks.length}** songs from spotify playlist`,
     );
 
     interaction.followUp({ embeds: [embed] });
@@ -332,8 +332,8 @@ export class music {
     embed.setTitle("Current Track");
     embed.setDescription(
       `Playing **${currentTrack.title}** from **${formatDurationFromMS(
-        queue.playbackInfo?.playbackDuration ?? 0
-      )}/${formatDurationFromMS(currentTrack.duration)}**`
+        queue.playbackInfo?.playbackDuration ?? 0,
+      )}/${formatDurationFromMS(currentTrack.duration)}**`,
     );
 
     if (currentTrack.thumbnail) {
@@ -352,7 +352,7 @@ export class music {
       type: ApplicationCommandOptionType.Number,
     })
     seconds: number,
-    interaction: CommandInteraction
+    interaction: CommandInteraction,
   ): Promise<void> {
     const rq = await this.processJoin(interaction);
     if (!rq) {
@@ -365,7 +365,7 @@ export class music {
 
     if (!currentTrack) {
       interaction.followUp(
-        "> There doesn't seem to be anything to seek at the moment."
+        "> There doesn't seem to be anything to seek at the moment.",
       );
       return;
     }
@@ -375,8 +375,8 @@ export class music {
     if (time >= currentTrack.duration) {
       interaction.followUp(
         `> Time should not be greater then ${formatDurationFromMS(
-          currentTrack.duration
-        )}`
+          currentTrack.duration,
+        )}`,
       );
       return;
     }
@@ -389,8 +389,8 @@ export class music {
     embed.setTitle("Seeked");
     embed.setDescription(
       `Playing **${currentTrack.title}** from **${formatDurationFromMS(
-        time
-      )}/${formatDurationFromMS(currentTrack.duration)}**`
+        time,
+      )}/${formatDurationFromMS(currentTrack.duration)}**`,
     );
 
     interaction.followUp({ embeds: [embed] });
@@ -460,7 +460,7 @@ export class music {
 
     if (!currentTrack) {
       interaction.followUp(
-        "> There doesn't seem to be anything to skip at the moment."
+        "> There doesn't seem to be anything to skip at the moment.",
       );
       return;
     }
@@ -480,7 +480,7 @@ export class music {
       type: ApplicationCommandOptionType.Number,
     })
     volume: number,
-    interaction: CommandInteraction
+    interaction: CommandInteraction,
   ): Promise<void> {
     const rq = await this.processJoin(interaction);
     if (!rq) {
