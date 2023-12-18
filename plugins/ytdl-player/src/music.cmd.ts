@@ -17,7 +17,7 @@ import {
 } from "discordx";
 import fetch from "isomorphic-unfetch";
 import spotifyUrlInfo from "spotify-url-info";
-import YouTube from "youtube-sr";
+import { YouTube } from "youtube-sr";
 
 import { formatDurationFromMS, Queue } from "./queue.js";
 
