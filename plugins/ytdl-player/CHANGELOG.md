@@ -1,5 +1,11 @@
 # @discordx/plugin-ytdl-player
 
+## 2.0.7
+
+### Patch Changes
+
+- [`f490248`](https://github.com/discordx-ts/plugins/commit/f4902483a99331355edfa7dc3b9d2d99331b5919) Thanks [@samarmeena](https://github.com/samarmeena)! - fixed youtube-sr import
+
 ## 2.0.6
 
 ### Patch Changes
