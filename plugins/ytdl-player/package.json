@@ -1,6 +1,6 @@
 {
   "name": "@discordx/plugin-ytdl-player",
-  "version": "2.0.4",
+  "version": "2.0.5",
   "private": false,
   "description": "ytdl player plugin for discordx bots",
   "license": "Apache-2.0",

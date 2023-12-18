@@ -36,7 +36,7 @@
     "fix:prettier": "prettier --write .",
     "prettier": "prettier --check .",
     "lint": "eslint ./",
-    "prepare": "npx is-ci || npx husky install",
+    "prepare": "is-ci || husky install",
     "release": "npm run build && changeset publish",
     "test": "turbo run test --parallel"
   },
